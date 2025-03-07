@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>欢迎来到楚了个楚</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4);
+            font-family: 'Ma Shan Zheng', cursive;
+            color: white;
+            text-align: center;
+        }
+
+        .welcome-container {
+            padding: 2rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            margin: 20px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #A1C4FD, #C2E9FB);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px;
+            font-family: 'Ma Shan Zheng', cursive;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .description {
+            font-size: 1.2em;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .hearts {
+            font-size: 2em;
+            margin: 20px 0;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; }
+            .description { font-size: 1em; }
+            .start-btn { font-size: 1.2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <h1>欢迎来到楚了个楚</h1>
+        <div class="hearts">❤️ 💖 ❤️</div>
+        <div class="description">
+            这是一个充满爱与友情的小游戏<br>
+            让我们一起来消除卡牌，发现惊喜吧！
+        </div>
+        <button class="start-btn" onclick="window.location.href='index.html'">开始游戏</button>
+    </div>
+</body>
+</html>
