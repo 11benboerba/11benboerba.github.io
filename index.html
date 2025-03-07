@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>楚了个楚</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            background: url('images/background.png') center/cover fixed;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            width: 95%;
+            max-width: 800px;
+            margin: 10px auto;
+            padding: 15px;
+            border-radius: 15px;
+            position: relative;
+        }
+        
+        /* 移除半透明遮罩层 */
+        #gameContainer::before {
+            display: none;
+        }
+        
+        #topDeck {
+            height: 550px;
+            position: relative;
+            background: transparent; /* 完全透明 */
+            box-shadow: none; /* 移除阴影 */
+            border-radius: 10px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 160px);
+            grid-template-rows: repeat(3, 170px);
+            justify-content: center;
+            align-content: center;
+            gap: 10px;
+        }
+
+        #bottomArea {
+            min-height: 120px;
+            margin-top: 15px;
+            padding: 10px;
+            background: transparent; /* 完全透明 */
+            border-radius: 10px;
+            box-shadow: none; /* 移除阴影 */
+            overflow-x: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+
+        /* 为底部区域的卡片设置特殊样式 */
+        #bottomArea .card {
+            width: 100px; /* 底部卡片更小 */
+            height: 100px; /* 底部卡片更小 */
+            position: relative;
+            margin: 0;
+            transform-origin: center center;
+        }
+
+        .card {
+            width: 150px;
+            height: 150px;
+            border: 4px solid rgba(255, 255, 255, 0.8); /* 更明显的白色边框 */
+            border-radius: 12px;
+            cursor: pointer;
+            transition: none; /* 移除所有过渡效果 */
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1); /* 极轻微的白色背景 */
+            backdrop-filter: blur(5px); /* 添加毛玻璃效果 */
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transform-origin: center center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 确保图片覆盖整个容器且保持比例 */
+            object-position: center; /* 居中显示图片 */
+        }
+
+        /* 修改卡片类型样式 */
+        .card[data-type="1"] { 
+            border-color: gold;
+        }
+
+        /* 移除之前的背景图片设置 */
+        .card[data-type="1"],
+        .card[data-type="2"],
+        .card[data-type="3"],
+        .card[data-type="4"],
+        .card[data-type="5"],
+        .card[data-type="6"],
+        .card[data-type="7"],
+        .card[data-type="8"] {
+            background: #fff;
+        }
+
+        .selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px gold;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        #score {
+            font-size: 1.2em;
+            color: white;
+            font-weight: bold;
+            margin: 5px 0 0 0;
+            display: inline-block;
+            margin-left: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 标题样式优化 */
+        h1 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: white;
+            font-size: 1.8em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            -webkit-text-fill-color: white;
+            margin-bottom: 20px;
+        }
+
+        /* 修改消除提示样式 */
+        .elimination-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgb(255, 182, 193); /* 使用纯色替代渐变 */
+            color: rgb(255, 255, 255);
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 28px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgb(0, 0, 0);
+            text-shadow: 2px 2px 4px rgb(0, 0, 0);
+            border: 3px solid rgb(255, 255, 255);
+        }
+
+        /* 为不同类型的消息添加不同的背景色 */
+        .elimination-message[data-type="1"] {
+            background: linear-gradient(135deg, #FFD700, #FFA500); /* 金色渐变 */
+        }
+        .elimination-message[data-type="2"] {
+            background: linear-gradient(135deg, #98FB98, #3CB371); /* 绿色渐变 */
+        }
+        .elimination-message[data-type="3"] {
+            background: linear-gradient(135deg, #87CEEB, #4169E1); /* 蓝色渐变 */
+        }
+        .elimination-message[data-type="4"] {
+            background: linear-gradient(135deg, #DDA0DD, #9370DB); /* 紫色渐变 */
+        }
+        .elimination-message[data-type="5"] {
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4); /* 粉色渐变 */
+        }
+        .elimination-message[data-type="6"] {
+            background: linear-gradient(135deg, #F0E68C, #DAA520); /* 黄色渐变 */
+        }
+        .elimination-message[data-type="7"] {
+            background: linear-gradient(135deg, #FF6B6B, #FF4040); /* 红色渐变 */
+        }
+        .elimination-message[data-type="8"] {
+            background: linear-gradient(135deg, #00CED1, #20B2AA); /* 青色渐变 */
+        }
+
+        /* 修改消息弹出动画 */
+        @keyframes messagePopup {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            70% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        /* 完全移除卡片动画效果 */
+        @keyframes cardAppear {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .card-appear {
+            animation: none; /* 禁用卡片出现动画 */
+        }
+
+        /* 移除卡片消除动画 */
+        @keyframes eliminateCard {
+            0% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .card-eliminating {
+            animation: eliminateCard 0.3s linear forwards; /* 只保留淡出效果，不要缩放或旋转 */
+        }
+
+        /* 移除卡片悬停效果 */
+        .card:hover {
+            transform: none; /* 移除悬停缩放效果 */
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.4); /* 轻微阴影保持可见性 */
+            border-color: rgb(255, 255, 255);
+        }
+
+        /* 移除点击后卡片上升动画 */
+        .card {
+            transition: none; /* 移除所有过渡效果 */
+        }
+
+        button {
+            background: linear-gradient(135deg, #6e8efb, #4a90e2);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #333, #666);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        /* 添加一个新的样式类用于失败提示 */
+        .failure-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgb(255, 107, 107); /* 使用纯色替代渐变 */
+            color: rgb(255, 255, 255);
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 32px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgb(0, 0, 0);
+            text-shadow: 2px 2px 4px rgb(0, 0, 0);
+            border: 3px solid rgb(255, 255, 255);
+        }
+
+        /* 修改音乐按钮样式 */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF9A9E, #FAD0C4); /* 可爱的粉色渐变 */
+            border: 3px solid #fff;
+            color: white;
+            font-size: 32px; /* 增大图标尺寸 */
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 6px 20px rgba(255, 154, 158, 0.6);
+            background: linear-gradient(135deg, #FAD0C4, #FF9A9E);
+        }
+
+        .music-btn.playing {
+            animation: gentleRotating 8s linear infinite;
+        }
+
+        @keyframes gentleRotating {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 修改按钮样式和位置 */
+        .restart-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 120px;
+            height: 50px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #A1C4FD, #C2E9FB); /* 可爱的蓝色渐变 */
+            border: 3px solid #fff;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(161, 196, 253, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(161, 196, 253, 0.6);
+            background: linear-gradient(135deg, #C2E9FB, #A1C4FD);
+        }
+
+        .restart-btn::before {
+            content: '🎮';
+            margin-right: 5px;
+            font-size: 20px;
+        }
+
+        /* 移除旧的按钮和得分样式 */
+        #score {
+            display: none;
+        }
+
+        /* 添加可爱字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        /* 修改标题样式 */
+        h1 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 3em;
+            text-align: center;
+            background: linear-gradient(135deg, #FF9A9E, #FECFEF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(255, 154, 158, 0.3);
+            margin-bottom: 20px;
+            animation: titleFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* 移动端基础样式调整 */
+        @media screen and (max-width: 768px) {
+            #gameContainer {
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+            }
+
+            /* 调整顶部区域布局 */
+            #topDeck {
+                height: 450px;
+                grid-template-columns: repeat(3, 100px);
+                grid-template-rows: repeat(3, 110px);
+                padding: 10px;
+                gap: 5px;
+            }
+
+            /* 调整卡片大小 */
+            .card {
+                width: 90px;
+                height: 90px;
+                border-width: 3px;
+            }
+
+            /* 调整底部区域卡片 */
+            #bottomArea .card {
+                width: 70px;
+                height: 70px;
+            }
+
+            /* 调整按钮位置和大小 */
+            .restart-btn {
+                top: 10px;
+                left: 10px;
+                width: 100px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .music-btn {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+
+            /* 调整标题大小 */
+            h1 {
+                font-size: 2em;
+                margin: 35px 0 15px 0;
+            }
+
+            /* 调整消息提示样式 */
+            .elimination-message, .failure-message {
+                width: 80%;
+                font-size: 20px;
+                padding: 15px 20px;
+            }
+        }
+
+        /* 针对特小屏幕的额外调整 */
+        @media screen and (max-width: 360px) {
+            #topDeck {
+                grid-template-columns: repeat(3, 85px);
+                grid-template-rows: repeat(3, 95px);
+            }
+
+            .card {
+                width: 80px;
+                height: 80px;
+            }
+
+            #bottomArea .card {
+                width: 60px;
+                height: 60px;
+            }
+
+            .restart-btn {
+                width: 90px;
+                height: 35px;
+                font-size: 14px;
+            }
+        }
+
+        /* 防止页面滚动和回弹 */
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 优化触摸体验 */
+        .card {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        /* 修改难度选择菜单样式，设置为完全透明 */
+        .difficulty-menu {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: transparent; /* 完全透明背景 */
+            border-radius: 20px;
+            padding: 30px;
+            z-index: 2000;
+            text-align: center;
+            width: 300px;
+            border: none; /* 移除边框 */
+        }
+
+        .difficulty-menu h2 {
+            color: #fff; /* 白色文字以确保在透明背景上可见 */
+            font-family: 'Ma Shan Zheng', cursive;
+            margin-top: 0;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* 增强文字阴影使其在任何背景上可见 */
+        }
+
+        /* 修改难度按钮样式，保持按钮本身不透明以便于点击 */
+        .difficulty-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgb(255, 214, 231);
+            border: none;
+            border-radius: 50px;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.5em;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .difficulty-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 15px rgba(255, 192, 203, 1);
+        }
+
+        .difficulty-btn.easy {
+            background: rgb(161, 255, 163);
+        }
+
+        .difficulty-btn.normal {
+            background: rgb(255, 240, 161);
+        }
+
+        .difficulty-btn.hard {
+            background: rgb(255, 161, 161);
+        }
+
+        /* 修改难度指示器样式，移除所有透明度 */
+        .difficulty-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgb(255, 255, 255); /* 完全不透明 */
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-family: 'Ma Shan Zheng', cursive;
+            color: #333;
+            font-size: 16px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgb(0, 0, 0); /* 完全不透明的阴影 */
+            border: 2px solid rgb(255, 255, 255); /* 完全不透明的边框 */
+        }
+
+        /* 修改时间条样式，移除透明度 */
+        .timer-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 500px;
+            height: 10px;
+            background: rgb(255, 255, 255); /* 完全不透明 */
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+
+        .timer-progress {
+            height: 100%;
+            width: 100%;
+            background: rgb(255, 154, 158); /* 使用纯色替代渐变 */
+            border-radius: 10px;
+            transition: width 1s linear;
+        }
+
+        /* 警告状态 */
+        .timer-warning .timer-progress {
+            background: rgb(255, 215, 0); /* 使用纯色替代渐变 */
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* 添加这个样式来强制取消任何位置变化的过渡/动画效果 */
+        * {
+            animation-duration: 0s !important;
+            transition-duration: 0s !important;
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" loop>
+        <source src="music/background.mp3" type="audio/mp3">
+    </audio>
+    <audio id="matchSound" src="music/match.mp3"></audio>
+    <audio id="clickSound" src="sounds/click.mp3"></audio>
+    <audio id="successSound" src="sounds/success.mp3"></audio>
+    <audio id="failSound" src="sounds/fail.mp3"></audio>
+    
+    <div class="particles-container" id="particlesContainer"></div>
+    
+    <button id="musicToggle" class="music-btn">🎵</button>
+    <div id="difficultyIndicator" class="difficulty-indicator">普通难度</div>
+    <div class="timer-bar" id="timerBar">
+        <div class="timer-progress" id="timerProgress"></div>
+    </div>
+
+    <div id="gameContainer">
+        <h1>楚了个楚</h1>
+        <button class="restart-btn" onclick="showDifficultyMenu()">重新开始</button>
+        <div id="topDeck"></div>
+        <div id="bottomArea"></div>
+    </div>
+
+    <div id="difficultyMenu" class="difficulty-menu" style="display: none;">
+        <h2>选择难度</h2>
+        <button class="difficulty-btn easy" onclick="setDifficulty('easy')">简单模式</button>
+        <button class="difficulty-btn normal" onclick="setDifficulty('normal')">普通模式</button>
+        <button class="difficulty-btn hard" onclick="setDifficulty('hard')">困难模式</button>
+    </div>
+
+    <script>
+        const CARD_TYPES = 8; // 图案种类数量
+        let gameData = [];
+        let selectedCards = [];
+        let currentDifficulty = 'normal'; // 默认难度
+        let gameTimer = null;
+        let timeLeft = 180; // 默认时间(秒)
+        
+        // 添加音效元素引用
+        const matchSound = document.getElementById('matchSound');
+        const clickSound = document.getElementById('clickSound') || { play: () => {} };
+        const successSound = document.getElementById('successSound') || { play: () => {} };
+        const failSound = document.getElementById('failSound') || { play: () => {} };
+        
+        // 添加消除提示信息
+        const eliminationMessages = {
+            '1': '赵大天才真帅',
+            '2': '敌军超级鸡已被消灭',
+            '3': '张几样已撤退',
+            '4': '侦察兵五一瑞已被消灭',
+            '5': '敌军ss已被消灭',
+            '6': '四川摇篮已被消灭',
+            '7': '河间cxy已被消灭',
+            '8': '年级第一cyy都让你干掉啦！'
+        };
+
+        // 音乐控制相关代码
+        const bgMusic = document.getElementById('bgMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let isMusicPlaying = true; // 默认为播放状态
+
+        // 设置音乐按钮初始图标
+        musicToggle.innerHTML = '🎵';
+
+        // 显示难度选择菜单
+        function showDifficultyMenu() {
+            document.getElementById('difficultyMenu').style.display = 'block';
+            // 停止计时器
+            if (gameTimer) {
+                clearInterval(gameTimer);
+                gameTimer = null;
+            }
+        }
+
+        // 设置难度并开始游戏
+        function setDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+            document.getElementById('difficultyMenu').style.display = 'none';
+            
+            // 更新难度指示器
+            const diffText = {
+                'easy': '简单模式',
+                'normal': '普通模式',
+                'hard': '困难模式'
+            };
+            document.getElementById('difficultyIndicator').textContent = diffText[difficulty];
+            
+            // 设置时间限制
+            switch(difficulty) {
+                case 'easy':
+                    timeLeft = 300; // 5分钟
+                    break;
+                case 'normal':
+                    timeLeft = 180; // 3分钟
+                    break;
+                case 'hard':
+                    timeLeft = 120; // 2分钟
+                    break;
+            }
+            
+            updateTimerDisplay();
+            initGame();
+        }
+
+        // 更新时间显示
+        function updateTimerDisplay() {
+            const timerProgress = document.getElementById('timerProgress');
+            const timerBar = document.getElementById('timerBar');
+            
+            const totalTime = currentDifficulty === 'easy' ? 300 : (currentDifficulty === 'normal' ? 180 : 120);
+            const percentage = (timeLeft / totalTime) * 100;
+            
+            timerProgress.style.width = `${percentage}%`;
+            
+            // 时间不足30%时添加警告效果
+            if (percentage < 30) {
+                timerBar.classList.add('timer-warning');
+            } else {
+                timerBar.classList.remove('timer-warning');
+            }
+        }
+
+        // 倒计时函数
+        function startTimer() {
+            if (gameTimer) {
+                clearInterval(gameTimer);
+            }
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(gameTimer);
+                    gameOver(false);
+                }
+            }, 1000);
+        }
+
+        function gameOver(isWin) {
+            clearInterval(gameTimer);
+            
+            if (isWin) {
+                successSound.play();
+                
+                // 根据当前难度决定下一步
+                let nextAction;
+                let message;
+                
+                if (currentDifficulty === 'easy') {
+                    nextAction = () => setDifficulty('normal');
+                    message = '🌟 简单模式通关！升级到普通模式 🌟';
+                } else if (currentDifficulty === 'normal') {
+                    nextAction = () => setDifficulty('hard');
+                    message = '🌟 普通模式通关！挑战困难模式 🌟';
+                } else {
+                    nextAction = null;
+                    message = '🌟 恭喜！你已完成所有难度挑战 🌟';
+                }
+                
+                setTimeout(() => {
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'elimination-message';
+                    messageElement.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)';
+                    messageElement.innerHTML = message;
+                    messageElement.style.fontSize = '32px';
+                    document.body.appendChild(messageElement);
+                    
+                    // 胜利时创建更多粒子效果
+                    createParticleExplosion(window.innerWidth/2, window.innerHeight/2, 100, true);
+                    
+                    // 显示消息后，如果有下一个难度，等待一定时间后自动切换
+                    setTimeout(() => {
+                        messageElement.remove();
+                        if (nextAction) {
+                            // 添加延迟，给玩家短暂休息时间
+                            setTimeout(nextAction, 1000);
+                        }
+                    }, 3000);
+                }, 1000);
+            } else {
+                failSound.play();
+                setTimeout(() => {
+                    const message = document.createElement('div');
+                    message.className = 'failure-message';
+                    message.innerHTML = '💰 菜！给赵大天才发100红包让你过关 💰';
+                    document.body.appendChild(message);
+                    setTimeout(() => message.remove(), 4000);
+                }, 500);
+            }
+        }
+
+        function initGame() {
+            // 初始化3-4层卡片数据，根据难度调整
+            gameData = [];
+            
+            // 根据难度调整层数
+            let layers = 3; // 默认3层
+            if (currentDifficulty === 'hard') {
+                layers = 4; // 困难模式4层
+            }
+            
+            for (let layer = 0; layer < layers; layer++) {
+                const layerCards = [];
+                // 困难模式每层卡片更多
+                const cardsPerLayer = currentDifficulty === 'hard' ? (8 - layer) : (7 - layer);
+                
+                for (let i = 0; i < cardsPerLayer; i++) {
+                    // 困难模式增加卡片类型
+                    const maxType = currentDifficulty === 'hard' ? CARD_TYPES : (currentDifficulty === 'easy' ? 6 : CARD_TYPES);
+                    layerCards.push({
+                        type: Math.floor(Math.random() * maxType) + 1,
+                        layer: layer,
+                        row: Math.floor(i / 3),
+                        col: i % 3,
+                        visible: false
+                    });
+                }
+                gameData.push(...layerCards);
+            }
+            
+            // 清空底部区域
+            document.getElementById('bottomArea').innerHTML = '';
+            
+            // 清空卡片容器并重新渲染
+            const deck = document.getElementById('topDeck');
+            deck.innerHTML = '';
+            
+            // 启动计时器
+            startTimer();
+            
+            // 渲染游戏
+            renderGame();
+
+            // 如果音乐没有播放，开始播放
+            if (!isMusicPlaying) {
+                bgMusic.play().then(() => {
+                    isMusicPlaying = true;
+                    musicToggle.classList.add('playing');
+                }).catch(error => {
+                    console.log("音乐自动播放失败，需要用户交互");
+                });
+            }
+        }
+
+        function renderGame() {
+            const deck = document.getElementById('topDeck');
+            deck.innerHTML = '';
+            
+            // 使用普通DOM操作，不使用DocumentFragment
+            // (DocumentFragment可能会引起连续的渲染更新)
+            
+            const isMobile = window.innerWidth <= 768;
+            const cardWidth = isMobile ? 100 : 160;
+            const cardHeight = isMobile ? 110 : 170;
+            const layerOffset = isMobile ? 20 : 30;
+            
+            const baseLeft = (deck.offsetWidth - (3 * cardWidth)) / 2;
+            const baseTop = (deck.offsetHeight - (3 * cardHeight)) / 2;
+            
+            // 按层级顺序渲染卡片
+            for (let layer = 0; layer < 4; layer++) {
+                const layerCards = gameData.filter(card => card.layer === layer);
+                
+                layerCards.forEach(card => {
+                    if (isCardClickable(card)) {
+                        const element = document.createElement('div');
+                        element.className = 'card';
+                        
+                        // 精确计算位置
+                        const left = baseLeft + (card.col * cardWidth);
+                        const top = baseTop + (card.row * cardHeight) - (card.layer * layerOffset);
+                        
+                        // 使用行内样式，强制指定所有动画相关属性
+                        element.style.cssText = `
+                            position: absolute !important;
+                            left: ${left}px !important;
+                            top: ${top}px !important;
+                            z-index: ${card.layer} !important;
+                            transition: none !important;
+                            animation: none !important;
+                            transform: none !important;
+                            box-shadow: 0 ${4 + card.layer * 2}px ${8 + card.layer * 4}px rgba(0,0,0,${0.1 + card.layer * 0.05});
+                        `;
+                        
+                        element.dataset.type = card.type;
+                        
+                        // 创建图片元素
+                        const img = document.createElement('img');
+                        img.src = `images/${card.type}.png`;
+                        img.alt = `图${card.type}`;
+                        img.style.cssText = "transition: none !important; animation: none !important;";
+                        img.onerror = () => {
+                            element.textContent = '图' + card.type;
+                            element.style.cssText += "display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: bold;";
+                        };
+                        
+                        element.appendChild(img);
+                        element.onclick = () => handleCardClick(card);
+                        deck.appendChild(element);
+                    }
+                });
+            }
+        }
+
+        function isCardClickable(card) {
+            // 检查上层是否有遮挡
+            return !gameData.some(c => 
+                c.layer === card.layer + 1 && 
+                c.row === card.row && 
+                c.col === card.col
+            );
+        }
+
+        function handleCardClick(card) {
+            const bottomArea = document.getElementById('bottomArea');
+            
+            // 设置底部区域卡片数量限制，根据难度调整
+            const maxBottomCards = currentDifficulty === 'easy' ? 8 : 
+                                   (currentDifficulty === 'normal' ? 7 : 6);
+                                   
+            if (bottomArea.children.length >= maxBottomCards) return;
+
+            // 播放点击音效
+            clickSound.play();
+
+            // 创建新卡片
+            const newCard = document.createElement('div');
+            // 移除card-appear类，避免动画效果
+            newCard.className = 'card';
+            newCard.style.position = 'relative'; 
+            newCard.style.width = '100px';
+            newCard.style.height = '100px';
+            newCard.style.flexShrink = '0'; 
+            newCard.dataset.type = card.type;
+            
+            // 创建图片元素
+            const img = document.createElement('img');
+            img.src = `images/${card.type}.png`;
+            img.alt = `图${card.type}`;
+            img.onerror = () => {
+                newCard.textContent = '图' + card.type;
+                newCard.style.display = 'flex';
+                newCard.style.justifyContent = 'center';
+                newCard.style.alignItems = 'center';
+                newCard.style.fontSize = '20px'; // 稍微减小字号
+                newCard.style.fontWeight = 'bold';
+            };
+            
+            newCard.appendChild(img);
+            bottomArea.appendChild(newCard);
+
+            // 移除原卡片
+            gameData = gameData.filter(c => c !== card);
+            renderGame();
+            checkMatches();
+        }
+
+        // 创建粒子爆炸效果
+        function createParticleExplosion(x, y, count = 30, isWin = false) {
+            const container = document.getElementById('particlesContainer');
+            
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // 随机大小
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // 设置初始位置
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+                
+                // 设置颜色
+                if (isWin) {
+                    // 胜利时使用彩色粒子
+                    const hue = Math.floor(Math.random() * 360);
+                    particle.style.background = `radial-gradient(circle, hsla(${hue}, 100%, 70%, 0.8) 0%, hsla(${hue}, 100%, 70%, 0) 70%)`;
+                } else {
+                    // 普通消除使用金色/白色粒子
+                    const colors = ['rgba(255,215,0,0.8)', 'rgba(255,255,255,0.8)', 'rgba(255,223,186,0.8)'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.background = `radial-gradient(circle, ${color} 0%, ${color.replace('0.8', '0')} 70%)`;
+                }
+                
+                // 添加动画
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 5 + 3;
+                const vx = Math.cos(angle) * velocity;
+                const vy = Math.sin(angle) * velocity;
+                const duration = Math.random() * 1 + 0.5;
+                
+                // 使用CSS动画
+                particle.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${vx * 50}px, ${vy * 50}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: duration * 1000,
+                    easing: 'cubic-bezier(0, 0.9, 0.57, 1)'
+                });
+                
+                container.appendChild(particle);
+                
+                // 动画结束后移除粒子
+                setTimeout(() => {
+                    if (particle.parentNode === container) {
+                        container.removeChild(particle);
+                    }
+                }, duration * 1000);
+            }
+        }
+
+        // 修改显示消除提示的函数
+        function showEliminationMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'elimination-message';
+            messageElement.dataset.type = type;
+            
+            // 添加表情符号
+            let emoji = '';
+            switch(type) {
+                case '1': emoji = '🌟'; break;
+                case '2': emoji = '🐔'; break;
+                case '3': emoji = '🏃'; break;
+                case '4': emoji = '👀'; break;
+                case '5': emoji = '⭐'; break;
+                case '6': emoji = '🎵'; break;
+                case '7': emoji = '🌈'; break;
+                case '8': emoji = '👑'; break;
+            }
+            
+            messageElement.innerHTML = `${emoji} ${message} ${emoji}`;
+            document.body.appendChild(messageElement);
+
+            // 播放匹配音效
+            matchSound.play();
+
+            // 减少动画显示时间，从2000ms减少到800ms
+            setTimeout(() => {
+                messageElement.remove();
+            }, 800);
+        }
+
+        // 修改checkMatches函数
+        function checkMatches() {
+            const bottomCards = [...document.getElementById('bottomArea').children];
+            const typeCount = {};
+            
+            bottomCards.forEach(card => {
+                const type = card.dataset.type;
+                typeCount[type] = (typeCount[type] || 0) + 1;
+            });
+
+            // 消除三个相同图案
+            let anyEliminated = false;
+            
+            Object.entries(typeCount).forEach(([type, count]) => {
+                if (count >= 3) {
+                    anyEliminated = true;
+                    const toRemove = bottomCards.filter(c => c.dataset.type === type).slice(0, 3);
+                    
+                    // 立即移除卡片，不使用动画
+                    toRemove.forEach(card => card.remove());
+
+                    // 显示消除提示
+                    showEliminationMessage(eliminationMessages[type], type);
+                }
+            });
+            
+            // 增加简单模式的时间奖励
+            if (anyEliminated && currentDifficulty === 'easy') {
+                timeLeft += 10; // 消除一组加10秒
+                updateTimerDisplay();
+            }
+        }
+
+        // 恢复checkGameOver函数的原始形式，移除返回值
+        function checkGameOver() {
+            if (gameData.length === 0) {
+                // 游戏胜利
+                gameOver(true);
+            } else {
+                // 判断失败条件 - 根据难度调整
+                const bottomArea = document.getElementById('bottomArea');
+                const maxBottomCards = currentDifficulty === 'easy' ? 8 : 
+                                    (currentDifficulty === 'normal' ? 7 : 6);
+                if (bottomArea.children.length >= maxBottomCards) {
+                    gameOver(false);
+                }
+            }
+        }
+
+        // 音乐控制函数
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicToggle.classList.remove('playing');
+                musicToggle.innerHTML = '🎵';
+            } else {
+                bgMusic.play();
+                musicToggle.classList.add('playing');
+                musicToggle.innerHTML = '🎵';
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        // 添加点击事件监听器
+        musicToggle.addEventListener('click', toggleMusic);
+
+        // 页面加载完成后自动播放音乐
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示难度选择菜单而不是直接开始游戏
+            showDifficultyMenu();
+            
+            // 尝试自动播放
+            bgMusic.play().then(() => {
+                isMusicPlaying = true;
+                musicToggle.classList.add('playing');
+            }).catch(error => {
+                // 如果自动播放失败，等待用户第一次点击页面时播放
+                document.addEventListener('click', function startMusic() {
+                    bgMusic.play();
+                    isMusicPlaying = true;
+                    musicToggle.classList.add('playing');
+                    document.removeEventListener('click', startMusic);
+                }, { once: true });
+            });
+        });
+
+        // 设置音乐音量
+        bgMusic.volume = 0.6; // 设置为60%音量
+
+        // 添加触摸事件支持
+        function addTouchSupport() {
+            document.addEventListener('touchstart', function(e) {
+                // 阻止双击缩放
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // 阻止页面缩放
+            document.addEventListener('gesturestart', function(e) {
+                e.preventDefault();
+            });
+        }
+
+        // 页面加载完成后初始化移动端支持
+        document.addEventListener('DOMContentLoaded', function() {
+            addTouchSupport();
+        });
+    </script>
+</body>
+</html>
