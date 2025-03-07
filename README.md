@@ -22,7 +22,7 @@
 
 ## 立即体验 🚀
 
-[点击开始游戏](https://11benboerba.github.io)
+[点击开始游戏](https://11benboerba.github.io/welcome.html)
 
 ## 技术实现 💻
 
