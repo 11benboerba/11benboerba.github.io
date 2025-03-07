@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>楚了个楚</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            background: url('images/background.png') center/cover fixed;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            width: 95%;
+            max-width: 800px;
+            margin: 10px auto;
+            padding: 15px;
+            border-radius: 15px;
+            position: relative;
+        }
+        
+        /* 移除半透明遮罩层 */
+        #gameContainer::before {
+            display: none;
+        }
+        
+        #topDeck {
+            height: 550px;
+            position: relative;
+            background: transparent; /* 完全透明 */
+            box-shadow: none; /* 移除阴影 */
+            border-radius: 10px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, 160px);
+            grid-template-rows: repeat(3, 170px);
+            justify-content: center;
+            align-content: center;
+            gap: 10px;
+        }
+
+        #bottomArea {
+            min-height: 120px;
+            margin-top: 15px;
+            padding: 10px;
+            background: transparent; /* 完全透明 */
+            border-radius: 10px;
+            box-shadow: none; /* 移除阴影 */
+            overflow-x: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+        }
+
+        /* 为底部区域的卡片设置特殊样式 */
+        #bottomArea .card {
+            width: 100px; /* 底部卡片更小 */
+            height: 100px; /* 底部卡片更小 */
+            position: relative;
+            margin: 0;
+            transform-origin: center center;
+        }
+
+        .card {
+            width: 150px;
+            height: 150px;
+            border: 4px solid rgba(255, 255, 255, 0.8); /* 更明显的白色边框 */
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.1); /* 极轻微的白色背景 */
+            backdrop-filter: blur(5px); /* 添加毛玻璃效果 */
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transform-origin: center center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 确保图片覆盖整个容器且保持比例 */
+            object-position: center; /* 居中显示图片 */
+        }
+
+        /* 修改卡片类型样式 */
+        .card[data-type="1"] { 
+            border-color: gold;
+        }
+
+        /* 移除之前的背景图片设置 */
+        .card[data-type="1"],
+        .card[data-type="2"],
+        .card[data-type="3"],
+        .card[data-type="4"],
+        .card[data-type="5"],
+        .card[data-type="6"],
+        .card[data-type="7"],
+        .card[data-type="8"] {
+            background: #fff;
+        }
+
+        .selected {
+            transform: scale(1.1);
+            box-shadow: 0 0 10px gold;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+        }
+        
+        #score {
+            font-size: 1.2em;
+            color: white;
+            font-weight: bold;
+            margin: 5px 0 0 0;
+            display: inline-block;
+            margin-left: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 标题样式优化 */
+        h1 {
+            margin: 0 0 10px 0;
+            text-align: center;
+            color: white;
+            font-size: 1.8em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            -webkit-text-fill-color: white;
+            margin-bottom: 20px;
+        }
+
+        /* 修改消除提示样式 */
+        .elimination-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4); /* 粉色渐变背景 */
+            color: #fff;
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 28px; /* 放大字体 */
+            animation: messagePopup 2s ease-in-out;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            border: 3px solid #fff;
+        }
+
+        /* 为不同类型的消息添加不同的背景色 */
+        .elimination-message[data-type="1"] {
+            background: linear-gradient(135deg, #FFD700, #FFA500); /* 金色渐变 */
+        }
+        .elimination-message[data-type="2"] {
+            background: linear-gradient(135deg, #98FB98, #3CB371); /* 绿色渐变 */
+        }
+        .elimination-message[data-type="3"] {
+            background: linear-gradient(135deg, #87CEEB, #4169E1); /* 蓝色渐变 */
+        }
+        .elimination-message[data-type="4"] {
+            background: linear-gradient(135deg, #DDA0DD, #9370DB); /* 紫色渐变 */
+        }
+        .elimination-message[data-type="5"] {
+            background: linear-gradient(135deg, #FFB6C1, #FF69B4); /* 粉色渐变 */
+        }
+        .elimination-message[data-type="6"] {
+            background: linear-gradient(135deg, #F0E68C, #DAA520); /* 黄色渐变 */
+        }
+        .elimination-message[data-type="7"] {
+            background: linear-gradient(135deg, #FF6B6B, #FF4040); /* 红色渐变 */
+        }
+        .elimination-message[data-type="8"] {
+            background: linear-gradient(135deg, #00CED1, #20B2AA); /* 青色渐变 */
+        }
+
+        /* 修改消息弹出动画 */
+        @keyframes messagePopup {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            70% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        /* 卡片消除动画 */
+        .card-eliminating {
+            animation: eliminateCard 0.8s ease-out;
+        }
+
+        @keyframes eliminateCard {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) rotate(10deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0) rotate(20deg);
+                opacity: 0;
+            }
+        }
+
+        /* UI优化 */
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            border-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 8px 16px rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            background: linear-gradient(135deg, #6e8efb, #4a90e2);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            background: linear-gradient(135deg, #4a90e2, #357abd);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            background: linear-gradient(135deg, #333, #666);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        /* 添加一个新的样式类用于失败提示 */
+        .failure-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #FF6B6B, #FF4040);
+            color: #fff;
+            padding: 20px 40px;
+            border-radius: 30px;
+            font-size: 32px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            border: 3px solid #fff;
+            opacity: 1; /* 直接显示，不使用动画 */
+        }
+
+        /* 修改音乐按钮样式 */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #FF9A9E, #FAD0C4); /* 可爱的粉色渐变 */
+            border: 3px solid #fff;
+            color: white;
+            font-size: 32px; /* 增大图标尺寸 */
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .music-btn:hover {
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 6px 20px rgba(255, 154, 158, 0.6);
+            background: linear-gradient(135deg, #FAD0C4, #FF9A9E);
+        }
+
+        .music-btn.playing {
+            animation: gentleRotating 8s linear infinite;
+        }
+
+        @keyframes gentleRotating {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 修改按钮样式和位置 */
+        .restart-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 120px;
+            height: 50px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #A1C4FD, #C2E9FB); /* 可爱的蓝色渐变 */
+            border: 3px solid #fff;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(161, 196, 253, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            font-family: 'Ma Shan Zheng', cursive;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(161, 196, 253, 0.6);
+            background: linear-gradient(135deg, #C2E9FB, #A1C4FD);
+        }
+
+        .restart-btn::before {
+            content: '🎮';
+            margin-right: 5px;
+            font-size: 20px;
+        }
+
+        /* 移除旧的按钮和得分样式 */
+        #score {
+            display: none;
+        }
+
+        /* 添加可爱字体 */
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+
+        /* 修改标题样式 */
+        h1 {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 3em;
+            text-align: center;
+            background: linear-gradient(135deg, #FF9A9E, #FECFEF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(255, 154, 158, 0.3);
+            margin-bottom: 20px;
+            animation: titleFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* 移动端基础样式调整 */
+        @media screen and (max-width: 768px) {
+            #gameContainer {
+                width: 100%;
+                margin: 0;
+                padding: 10px;
+            }
+
+            /* 调整顶部区域布局 */
+            #topDeck {
+                height: 450px;
+                grid-template-columns: repeat(3, 100px);
+                grid-template-rows: repeat(3, 110px);
+                padding: 10px;
+                gap: 5px;
+            }
+
+            /* 调整卡片大小 */
+            .card {
+                width: 90px;
+                height: 90px;
+                border-width: 3px;
+            }
+
+            /* 调整底部区域卡片 */
+            #bottomArea .card {
+                width: 70px;
+                height: 70px;
+            }
+
+            /* 调整按钮位置和大小 */
+            .restart-btn {
+                top: 10px;
+                left: 10px;
+                width: 100px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .music-btn {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+
+            /* 调整标题大小 */
+            h1 {
+                font-size: 2em;
+                margin: 35px 0 15px 0;
+            }
+
+            /* 调整消息提示样式 */
+            .elimination-message, .failure-message {
+                width: 80%;
+                font-size: 20px;
+                padding: 15px 20px;
+            }
+        }
+
+        /* 针对特小屏幕的额外调整 */
+        @media screen and (max-width: 360px) {
+            #topDeck {
+                grid-template-columns: repeat(3, 85px);
+                grid-template-rows: repeat(3, 95px);
+            }
+
+            .card {
+                width: 80px;
+                height: 80px;
+            }
+
+            #bottomArea .card {
+                width: 60px;
+                height: 60px;
+            }
+
+            .restart-btn {
+                width: 90px;
+                height: 35px;
+                font-size: 14px;
+            }
+        }
+
+        /* 防止页面滚动和回弹 */
+        body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* 优化触摸体验 */
+        .card {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body>
+    <audio id="bgMusic" loop>
+        <source src="music/background.mp3" type="audio/mp3">
+    </audio>
+    <button id="musicToggle" class="music-btn">🎵</button>
+
+    <div id="gameContainer">
+        <h1>楚了个楚</h1>
+        <button class="restart-btn" onclick="initGame()">重新开始</button>
+        <div id="topDeck"></div>
+        <div id="bottomArea"></div>
+    </div>
+
+    <script>
+        const CARD_TYPES = 8; // 图案种类数量
+        let gameData = [];
+        let selectedCards = [];
+
+        // 添加消除提示信息
+        const eliminationMessages = {
+            '1': '赵大天才真帅',
+            '2': '敌军超级鸡已被消灭',
+            '3': '张几样已撤退',
+            '4': '侦察兵五一瑞已被消灭',
+            '5': '敌军ss已被消灭',
+            '6': '四川摇篮已被消灭',
+            '7': '河间cxy已被消灭',
+            '8': '年级第一cyy都让你干掉啦！'
+        };
+
+        // 音乐控制相关代码
+        const bgMusic = document.getElementById('bgMusic');
+        const musicToggle = document.getElementById('musicToggle');
+        let isMusicPlaying = true; // 默认为播放状态
+
+        // 设置音乐按钮初始图标
+        musicToggle.innerHTML = '🎵'; // 可以换成 '🎼' 或 '🎶' 等其他音乐图标
+
+        function initGame() {
+            // 初始化3层卡片数据
+            gameData = [];
+            for (let layer = 0; layer < 3; layer++) {
+                const layerCards = [];
+                for (let i = 0; i < 7 - layer; i++) {
+                    layerCards.push({
+                        type: Math.floor(Math.random() * CARD_TYPES) + 1,
+                        layer: layer,
+                        row: Math.floor(i / 3),
+                        col: i % 3,
+                        visible: false
+                    });
+                }
+                gameData.push(...layerCards);
+            }
+            // 清空底部区域
+            document.getElementById('bottomArea').innerHTML = '';
+            renderGame();
+
+            // 如果音乐没有播放，开始播放
+            if (!isMusicPlaying) {
+                // 使用用户交互启动音乐（大多数浏览器要求）
+                bgMusic.play().then(() => {
+                    isMusicPlaying = true;
+                    musicToggle.classList.add('playing');
+                }).catch(error => {
+                    console.log("音乐自动播放失败，需要用户交互");
+                });
+            }
+        }
+
+        function renderGame() {
+            const deck = document.getElementById('topDeck');
+            deck.innerHTML = '';
+            
+            // 根据屏幕宽度调整基准位置
+            const isMobile = window.innerWidth <= 768;
+            const cardWidth = isMobile ? 100 : 160;
+            const cardHeight = isMobile ? 110 : 170;
+            const layerOffset = isMobile ? 20 : 30;
+            
+            const baseLeft = (deck.offsetWidth - (3 * cardWidth)) / 2;
+            const baseTop = (deck.offsetHeight - (3 * cardHeight)) / 2;
+            
+            // 按层级顺序渲染卡片
+            for (let layer = 0; layer < 3; layer++) {
+                const layerCards = gameData.filter(card => card.layer === layer);
+                
+                layerCards.forEach(card => {
+                    if (isCardClickable(card)) {
+                        const element = document.createElement('div');
+                        element.className = 'card';
+                        
+                        // 精确计算位置，增加层级效果
+                        const left = baseLeft + (card.col * cardWidth);
+                        const top = baseTop + (card.row * cardHeight) - (card.layer * layerOffset); // 增加层级偏移
+                        
+                        element.style.left = `${left}px`;
+                        element.style.top = `${top}px`;
+                        element.style.zIndex = card.layer; // 设置z-index确保正确的堆叠顺序
+                        element.dataset.type = card.type;
+                        
+                        // 添加阴影效果增强层次感
+                        element.style.boxShadow = `0 ${4 + card.layer * 2}px ${8 + card.layer * 4}px rgba(0,0,0,${0.1 + card.layer * 0.05})`;
+                        
+                        // 创建图片元素
+                        const img = document.createElement('img');
+                        img.src = `images/${card.type}.png`;
+                        img.alt = `图${card.type}`;
+                        img.onerror = () => {
+                            element.textContent = '图' + card.type;
+                            element.style.display = 'flex';
+                            element.style.justifyContent = 'center';
+                            element.style.alignItems = 'center';
+                            element.style.fontSize = '24px'; // 增大字号
+                            element.style.fontWeight = 'bold';
+                        };
+                        
+                        element.appendChild(img);
+                        element.onclick = () => handleCardClick(card);
+                        deck.appendChild(element);
+                    }
+                });
+            }
+        }
+
+        function isCardClickable(card) {
+            // 检查上层是否有遮挡
+            return !gameData.some(c => 
+                c.layer === card.layer + 1 && 
+                c.row === card.row && 
+                c.col === card.col
+            );
+        }
+
+        function handleCardClick(card) {
+            const bottomArea = document.getElementById('bottomArea');
+            if (bottomArea.children.length >= 7) return;
+
+            // 创建新卡片
+            const newCard = document.createElement('div');
+            newCard.className = 'card';
+            newCard.style.position = 'relative'; 
+            newCard.style.width = '100px';  // 底部卡片尺寸
+            newCard.style.height = '100px'; // 底部卡片尺寸
+            newCard.style.flexShrink = '0'; 
+            newCard.dataset.type = card.type;
+            
+            // 创建图片元素
+            const img = document.createElement('img');
+            img.src = `images/${card.type}.png`;
+            img.alt = `图${card.type}`;
+            img.onerror = () => {
+                newCard.textContent = '图' + card.type;
+                newCard.style.display = 'flex';
+                newCard.style.justifyContent = 'center';
+                newCard.style.alignItems = 'center';
+                newCard.style.fontSize = '20px'; // 稍微减小字号
+                newCard.style.fontWeight = 'bold';
+            };
+            
+            newCard.appendChild(img);
+            bottomArea.appendChild(newCard);
+
+            // 移除原卡片
+            gameData = gameData.filter(c => c !== card);
+            renderGame();
+            checkMatches();
+        }
+
+        // 修改显示消除提示的函数
+        function showEliminationMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'elimination-message';
+            messageElement.dataset.type = type;
+            
+            // 添加表情符号
+            let emoji = '';
+            switch(type) {
+                case '1': emoji = '🌟'; break;
+                case '2': emoji = '🐔'; break;
+                case '3': emoji = '🏃'; break;
+                case '4': emoji = '👀'; break;
+                case '5': emoji = '⭐'; break;
+                case '6': emoji = '🎵'; break;
+                case '7': emoji = '🌈'; break;
+                case '8': emoji = '👑'; break;
+            }
+            
+            messageElement.innerHTML = `${emoji} ${message} ${emoji}`;
+            document.body.appendChild(messageElement);
+
+            // 动画结束后移除元素
+            setTimeout(() => {
+                messageElement.remove();
+            }, 2000);
+        }
+
+        // 修改checkMatches函数
+        function checkMatches() {
+            const bottomCards = [...document.getElementById('bottomArea').children];
+            const typeCount = {};
+            
+            bottomCards.forEach(card => {
+                const type = card.dataset.type;
+                typeCount[type] = (typeCount[type] || 0) + 1;
+            });
+
+            // 消除三个相同图案
+            Object.entries(typeCount).forEach(([type, count]) => {
+                if (count >= 3) {
+                    const toRemove = bottomCards.filter(c => c.dataset.type === type);
+                    
+                    // 添加消除动画
+                    toRemove.slice(0, 3).forEach(card => {
+                        card.classList.add('card-eliminating');
+                        setTimeout(() => card.remove(), 800);
+                    });
+
+                    // 显示消除提示
+                    showEliminationMessage(eliminationMessages[type], type);
+                }
+            });
+
+            checkGameOver();
+        }
+
+        // 修改游戏结束提示样式
+        function checkGameOver() {
+            if (gameData.length === 0) {
+                setTimeout(() => {
+                    const message = document.createElement('div');
+                    message.className = 'elimination-message'; // 保持成功提示的动画效果
+                    message.style.background = 'linear-gradient(135deg, #FFD700, #FFA500)';
+                    message.innerHTML = '🌟 牛牛牛，赵越楚真是厉害 🌟';
+                    message.style.fontSize = '32px';
+                    document.body.appendChild(message);
+                    setTimeout(() => message.remove(), 4000);
+                }, 1000);
+            } else if (document.getElementById('bottomArea').children.length >= 7) {
+                setTimeout(() => {
+                    const message = document.createElement('div');
+                    message.className = 'failure-message'; // 使用新的样式类
+                    message.innerHTML = '💰 菜！给赵大天才发100红包让你过关 💰';
+                    document.body.appendChild(message);
+                    setTimeout(() => message.remove(), 4000);
+                }, 500);
+            }
+        }
+
+        // 音乐控制函数
+        function toggleMusic() {
+            if (isMusicPlaying) {
+                bgMusic.pause();
+                musicToggle.classList.remove('playing');
+                musicToggle.innerHTML = '🎵';
+            } else {
+                bgMusic.play();
+                musicToggle.classList.add('playing');
+                musicToggle.innerHTML = '🎵';
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+
+        // 添加点击事件监听器
+        musicToggle.addEventListener('click', toggleMusic);
+
+        // 添加音效函数
+        function playMatchSound() {
+            const matchSound = new Audio('music/match.mp3');
+            matchSound.play();
+        }
+
+        // 页面加载完成后自动播放音乐
+        document.addEventListener('DOMContentLoaded', function() {
+            // 尝试自动播放
+            bgMusic.play().then(() => {
+                isMusicPlaying = true;
+                musicToggle.classList.add('playing');
+            }).catch(error => {
+                // 如果自动播放失败，等待用户第一次点击页面时播放
+                document.addEventListener('click', function startMusic() {
+                    bgMusic.play();
+                    isMusicPlaying = true;
+                    musicToggle.classList.add('playing');
+                    document.removeEventListener('click', startMusic);
+                }, { once: true });
+            });
+        });
+
+        // 设置音乐音量
+        bgMusic.volume = 0.6; // 设置为60%音量
+
+        // 添加触摸事件支持
+        function addTouchSupport() {
+            document.addEventListener('touchstart', function(e) {
+                // 阻止双击缩放
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // 阻止页面缩放
+            document.addEventListener('gesturestart', function(e) {
+                e.preventDefault();
+            });
+        }
+
+        // 页面加载完成后初始化移动端支持
+        document.addEventListener('DOMContentLoaded', function() {
+            addTouchSupport();
+            // 其他初始化代码...
+        });
+
+        // 初始化游戏
+        initGame();
+    </script>
+</body>
+</html>
