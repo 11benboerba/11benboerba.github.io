@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>欢迎来到楚了个楚</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FFE4B5, #FFD700);
+            font-family: 'Ma Shan Zheng', cursive;
+            color: white;
+            text-align: center;
+        }
+
+        .welcome-container {
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            margin: 10px;
+        }
+
+        h1 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.8em;
+            background: linear-gradient(135deg, #A1C4FD, #C2E9FB);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px;
+            font-family: 'Ma Shan Zheng', cursive;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .description {
+            font-size: 1.6em;
+            margin: 20px 0;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+
+        .hearts {
+            font-size: 2.5em;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            h1 { 
+                font-size: 2.2em; 
+                margin-bottom: 10px;
+            }
+            .description { 
+                font-size: 1.2em; 
+                margin: 10px 0;
+            }
+            .start-btn { 
+                font-size: 1.4em;
+                padding: 12px 30px;
+                margin: 15px;
+            }
+            .hearts {
+                font-size: 1.8em;
+                margin: 10px 0;
+            }
+            .welcome-container {
+                padding: 1rem;
+            }
+        }
+
+        @media (max-width: 320px) {
+            h1 { 
+                font-size: 1.8em; 
+            }
+            .description { 
+                font-size: 1em; 
+            }
+            .start-btn { 
+                font-size: 1.2em;
+                padding: 10px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-container">
+        <h1>欢迎来到楚了个楚</h1>
+        <div class="hearts">❤️ 💖🔞🫦 ❤️</div>
+        <div class="description">
+            成功过关可以找赵越楚抚慰一下🐻‍❄️
+        </div>
+        <button class="start-btn" onclick="window.location.href='index.html'">开始游戏</button>
+    </div>
+</body>
+</html>
