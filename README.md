@@ -21,7 +21,7 @@
 
 ## 立即体验 🚀
 
-[点击开始游戏](https://11benboerba.github.io/game_link.html)
+[点击开始游戏](https://11benboerba.github.io/gamelink.html)
 
 ## 技术实现 💻
 
